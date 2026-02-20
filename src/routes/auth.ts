@@ -1,8 +1,14 @@
-import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
-import { createAnonClient } from "../lib/supabase";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { createAnonClient, createAuthenticatedClient } from "../lib/supabase";
 import { AuthRequestSchema, AuthResponseSchema } from "../schemas/auth";
 import { ErrorSchema } from "../schemas/common";
 import type { Variables } from "../types";
+
+const MessageSchema = z
+  .object({
+    message: z.string(),
+  })
+  .openapi("MessageResponse");
 
 const app = new OpenAPIHono<{ Variables: Variables }>();
 
@@ -97,6 +103,40 @@ app.openapi(loginRoute, async (c) => {
     },
     200,
   );
+});
+
+const logoutRoute = createRoute({
+  method: "post",
+  path: "/logout",
+  tags: ["Auth"],
+  summary: "ログアウト",
+  security: [{ Bearer: [] }],
+  responses: {
+    200: {
+      description: "成功",
+      content: { "application/json": { schema: MessageSchema } },
+    },
+    401: {
+      description: "認証エラー",
+      content: { "application/json": { schema: ErrorSchema } },
+    },
+  },
+});
+
+app.openapi(logoutRoute, async (c) => {
+  const authHeader = c.req.header("Authorization");
+  if (!authHeader) {
+    return c.json({ error: "Missing authorization header" }, 401);
+  }
+
+  const supabase = createAuthenticatedClient(authHeader);
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    return c.json({ error: error.message }, 401);
+  }
+
+  return c.json({ message: "Logged out successfully" }, 200);
 });
 
 export { app as authRoutes };
