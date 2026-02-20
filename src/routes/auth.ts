@@ -1,43 +1,43 @@
-import { OpenAPIHono, createRoute } from '@hono/zod-openapi'
-import type { Variables } from '../types'
-import { AuthRequestSchema, AuthResponseSchema } from '../schemas/auth'
-import { ErrorSchema } from '../schemas/common'
-import { createAnonClient } from '../lib/supabase'
+import { createRoute, OpenAPIHono } from "@hono/zod-openapi";
+import { createAnonClient } from "../lib/supabase";
+import { AuthRequestSchema, AuthResponseSchema } from "../schemas/auth";
+import { ErrorSchema } from "../schemas/common";
+import type { Variables } from "../types";
 
-const app = new OpenAPIHono<{ Variables: Variables }>()
+const app = new OpenAPIHono<{ Variables: Variables }>();
 
 const signupRoute = createRoute({
-  method: 'post',
-  path: '/signup',
-  tags: ['Auth'],
-  summary: 'アカウント作成',
+  method: "post",
+  path: "/signup",
+  tags: ["Auth"],
+  summary: "アカウント作成",
   request: {
-    body: { content: { 'application/json': { schema: AuthRequestSchema } } },
+    body: { content: { "application/json": { schema: AuthRequestSchema } } },
   },
   responses: {
     200: {
-      description: '成功',
-      content: { 'application/json': { schema: AuthResponseSchema } },
+      description: "成功",
+      content: { "application/json": { schema: AuthResponseSchema } },
     },
     400: {
-      description: 'エラー',
-      content: { 'application/json': { schema: ErrorSchema } },
+      description: "エラー",
+      content: { "application/json": { schema: ErrorSchema } },
     },
   },
-})
+});
 
 app.openapi(signupRoute, async (c) => {
-  const { email, password } = c.req.valid('json')
-  const supabase = createAnonClient()
-  const { data, error } = await supabase.auth.signUp({ email, password })
+  const { email, password } = c.req.valid("json");
+  const supabase = createAnonClient();
+  const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (error) {
-    return c.json({ error: error.message }, 400)
+    return c.json({ error: error.message }, 400);
   }
 
   return c.json(
     {
-      message: 'Account created successfully',
+      message: "Account created successfully",
       user: data.user
         ? { id: data.user.id, email: data.user.email ?? null }
         : null,
@@ -50,44 +50,44 @@ app.openapi(signupRoute, async (c) => {
         : null,
     },
     200,
-  )
-})
+  );
+});
 
 const loginRoute = createRoute({
-  method: 'post',
-  path: '/login',
-  tags: ['Auth'],
-  summary: 'ログイン',
+  method: "post",
+  path: "/login",
+  tags: ["Auth"],
+  summary: "ログイン",
   request: {
-    body: { content: { 'application/json': { schema: AuthRequestSchema } } },
+    body: { content: { "application/json": { schema: AuthRequestSchema } } },
   },
   responses: {
     200: {
-      description: '成功',
-      content: { 'application/json': { schema: AuthResponseSchema } },
+      description: "成功",
+      content: { "application/json": { schema: AuthResponseSchema } },
     },
     401: {
-      description: '認証エラー',
-      content: { 'application/json': { schema: ErrorSchema } },
+      description: "認証エラー",
+      content: { "application/json": { schema: ErrorSchema } },
     },
   },
-})
+});
 
 app.openapi(loginRoute, async (c) => {
-  const { email, password } = c.req.valid('json')
-  const supabase = createAnonClient()
+  const { email, password } = c.req.valid("json");
+  const supabase = createAnonClient();
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
-  })
+  });
 
   if (error) {
-    return c.json({ error: error.message }, 401)
+    return c.json({ error: error.message }, 401);
   }
 
   return c.json(
     {
-      message: 'Login successful',
+      message: "Login successful",
       user: { id: data.user.id, email: data.user.email ?? null },
       session: {
         access_token: data.session.access_token,
@@ -96,7 +96,7 @@ app.openapi(loginRoute, async (c) => {
       },
     },
     200,
-  )
-})
+  );
+});
 
-export { app as authRoutes }
+export { app as authRoutes };
