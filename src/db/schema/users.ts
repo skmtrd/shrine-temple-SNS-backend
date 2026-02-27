@@ -1,5 +1,13 @@
-import { relations } from "drizzle-orm";
-import { integer, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
+import {
+  integer,
+  pgPolicy,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
+import { authenticatedRole } from "drizzle-orm/supabase";
 import { bookmarks } from "./bookmarks";
 import { comments } from "./comments";
 import { follows } from "./follows";
@@ -11,24 +19,51 @@ import { userBadges } from "./user-badges";
 import { userPilgrimages } from "./user-pilgrimages";
 import { visitHistories } from "./visit-histories";
 
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey(),
-  role: text("role").notNull().default("一般"),
-  email: text("email").notNull().unique(),
-  displayId: text("display_id").notNull().unique(),
-  username: text("username").notNull(),
-  profileImage: text("profile_image"),
-  bio: text("bio"),
-  name: text("name"),
-  address: text("address"),
-  gender: text("gender"),
-  age: integer("age"),
-  favoriteTempleId: integer("favorite_temple_id"),
-  mainRouteId: integer("main_route_id"),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").primaryKey(),
+    role: text("role").notNull().default("一般"),
+    email: text("email").notNull().unique(),
+    displayId: text("display_id").notNull().unique(),
+    username: text("username").notNull(),
+    profileImage: text("profile_image"),
+    bio: text("bio"),
+    name: text("name"),
+    address: text("address"),
+    gender: text("gender"),
+    age: integer("age"),
+    favoriteTempleId: integer("favorite_temple_id"),
+    mainRouteId: integer("main_route_id"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  () => [
+    pgPolicy("users_select_public", {
+      for: "select",
+      to: "public",
+      using: sql`true`,
+    }),
+    pgPolicy("users_insert_self", {
+      for: "insert",
+      to: authenticatedRole,
+      withCheck: sql`id = (select auth.uid())`,
+    }),
+    pgPolicy("users_update_self", {
+      for: "update",
+      to: authenticatedRole,
+      using: sql`id = (select auth.uid())`,
+      withCheck: sql`id = (select auth.uid())`,
+    }),
+    pgPolicy("users_admin_all", {
+      for: "all",
+      to: authenticatedRole,
+      using: sql`is_admin()`,
+      withCheck: sql`is_admin()`,
+    }),
+  ],
+).enableRLS();
 
 export const usersRelations = relations(users, ({ many, one }) => ({
   templeOfficials: many(templeOfficials),

@@ -1,76 +1,9 @@
 {
-  "id": "e3e6fb1a-be76-4912-9461-30af3de25fa4",
+  "id": "922a7c44-22b6-4c08-b018-c051e6afe734",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.reports": {
-      "name": "reports",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "reporter_id": {
-          "name": "reporter_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_type": {
-          "name": "target_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_id": {
-          "name": "target_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "reason": {
-          "name": "reason",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'未対応'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "reports_reporter_id_users_id_fk": {
-          "name": "reports_reporter_id_users_id_fk",
-          "tableFrom": "reports",
-          "tableTo": "users",
-          "columnsFrom": ["reporter_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.badges": {
       "name": "badges",
       "schema": "",
@@ -110,12 +43,28 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "badges_select_public": {
+          "name": "badges_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "badges_admin_all": {
+          "name": "badges_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
-    "public.user_badges": {
-      "name": "user_badges",
+    "public.bookmarks": {
+      "name": "bookmarks",
       "schema": "",
       "columns": {
         "id": {
@@ -130,14 +79,14 @@
           "primaryKey": false,
           "notNull": true
         },
-        "badge_id": {
-          "name": "badge_id",
+        "temple_id": {
+          "name": "temple_id",
           "type": "integer",
           "primaryKey": false,
           "notNull": true
         },
-        "awarded_at": {
-          "name": "awarded_at",
+        "created_at": {
+          "name": "created_at",
           "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": true,
@@ -146,20 +95,20 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "user_badges_user_id_users_id_fk": {
-          "name": "user_badges_user_id_users_id_fk",
-          "tableFrom": "user_badges",
+        "bookmarks_user_id_users_id_fk": {
+          "name": "bookmarks_user_id_users_id_fk",
+          "tableFrom": "bookmarks",
           "tableTo": "users",
           "columnsFrom": ["user_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "user_badges_badge_id_badges_id_fk": {
-          "name": "user_badges_badge_id_badges_id_fk",
-          "tableFrom": "user_badges",
-          "tableTo": "badges",
-          "columnsFrom": ["badge_id"],
+        "bookmarks_temple_id_temples_id_fk": {
+          "name": "bookmarks_temple_id_temples_id_fk",
+          "tableFrom": "bookmarks",
+          "tableTo": "temples",
+          "columnsFrom": ["temple_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -167,9 +116,311 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "bookmarks_select_public": {
+          "name": "bookmarks_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "bookmarks_insert_own": {
+          "name": "bookmarks_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "user_id = (select auth.uid())"
+        },
+        "bookmarks_delete_own": {
+          "name": "bookmarks_delete_own",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid())"
+        },
+        "bookmarks_admin_all": {
+          "name": "bookmarks_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
+    },
+    "public.comments": {
+      "name": "comments",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_type": {
+          "name": "target_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_comment_id": {
+          "name": "parent_comment_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "comments_user_id_users_id_fk": {
+          "name": "comments_user_id_users_id_fk",
+          "tableFrom": "comments",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "comments_select_public": {
+          "name": "comments_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "comments_insert_own": {
+          "name": "comments_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "user_id = (select auth.uid())"
+        },
+        "comments_update_own": {
+          "name": "comments_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid())",
+          "withCheck": "user_id = (select auth.uid())"
+        },
+        "comments_delete_own": {
+          "name": "comments_delete_own",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid())"
+        },
+        "comments_admin_all": {
+          "name": "comments_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.follows": {
+      "name": "follows",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "follower_id": {
+          "name": "follower_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_type": {
+          "name": "target_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "follows_follower_id_users_id_fk": {
+          "name": "follows_follower_id_users_id_fk",
+          "tableFrom": "follows",
+          "tableTo": "users",
+          "columnsFrom": ["follower_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "follows_select_public": {
+          "name": "follows_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "follows_insert_own": {
+          "name": "follows_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "follower_id = (select auth.uid())"
+        },
+        "follows_delete_own": {
+          "name": "follows_delete_own",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "follower_id = (select auth.uid())"
+        },
+        "follows_admin_all": {
+          "name": "follows_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.likes": {
+      "name": "likes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_type": {
+          "name": "target_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "likes_user_id_users_id_fk": {
+          "name": "likes_user_id_users_id_fk",
+          "tableFrom": "likes",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "likes_select_public": {
+          "name": "likes_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "likes_insert_own": {
+          "name": "likes_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "user_id = (select auth.uid())"
+        },
+        "likes_delete_own": {
+          "name": "likes_delete_own",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid())"
+        },
+        "likes_admin_all": {
+          "name": "likes_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
     },
     "public.pilgrimage_impressions": {
       "name": "pilgrimage_impressions",
@@ -230,9 +481,47 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "pilgrimage_impressions_select_public": {
+          "name": "pilgrimage_impressions_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "pilgrimage_impressions_insert_own": {
+          "name": "pilgrimage_impressions_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "user_id = (select auth.uid())"
+        },
+        "pilgrimage_impressions_update_own": {
+          "name": "pilgrimage_impressions_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid())",
+          "withCheck": "user_id = (select auth.uid())"
+        },
+        "pilgrimage_impressions_delete_own": {
+          "name": "pilgrimage_impressions_delete_own",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid())"
+        },
+        "pilgrimage_impressions_admin_all": {
+          "name": "pilgrimage_impressions_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.pilgrimage_routes": {
       "name": "pilgrimage_routes",
@@ -320,9 +609,144 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "pilgrimage_routes_select_public": {
+          "name": "pilgrimage_routes_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "is_public = true"
+        },
+        "pilgrimage_routes_select_own": {
+          "name": "pilgrimage_routes_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "creator_id = (select auth.uid())"
+        },
+        "pilgrimage_routes_insert_own": {
+          "name": "pilgrimage_routes_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "creator_id = (select auth.uid()) AND type = 'ユーザー'"
+        },
+        "pilgrimage_routes_update_own": {
+          "name": "pilgrimage_routes_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "creator_id = (select auth.uid())",
+          "withCheck": "creator_id = (select auth.uid())"
+        },
+        "pilgrimage_routes_delete_own": {
+          "name": "pilgrimage_routes_delete_own",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "creator_id = (select auth.uid())"
+        },
+        "pilgrimage_routes_admin_all": {
+          "name": "pilgrimage_routes_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
+    },
+    "public.reports": {
+      "name": "reports",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "reporter_id": {
+          "name": "reporter_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_type": {
+          "name": "target_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_id": {
+          "name": "target_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'未対応'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "reports_reporter_id_users_id_fk": {
+          "name": "reports_reporter_id_users_id_fk",
+          "tableFrom": "reports",
+          "tableTo": "users",
+          "columnsFrom": ["reporter_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "reports_select_own": {
+          "name": "reports_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "reporter_id = (select auth.uid())"
+        },
+        "reports_insert_own": {
+          "name": "reports_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "reporter_id = (select auth.uid())"
+        },
+        "reports_admin_all": {
+          "name": "reports_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
     },
     "public.route_temples": {
       "name": "route_temples",
@@ -370,492 +794,54 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "route_temples_select_public": {
+          "name": "route_temples_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "EXISTS (SELECT 1 FROM pilgrimage_routes WHERE id = route_id AND is_public = true)"
+        },
+        "route_temples_select_own": {
+          "name": "route_temples_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "EXISTS (SELECT 1 FROM pilgrimage_routes WHERE id = route_id AND creator_id = (select auth.uid()))"
+        },
+        "route_temples_insert_own": {
+          "name": "route_temples_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "EXISTS (SELECT 1 FROM pilgrimage_routes WHERE id = route_id AND creator_id = (select auth.uid()))"
+        },
+        "route_temples_update_own": {
+          "name": "route_temples_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "EXISTS (SELECT 1 FROM pilgrimage_routes WHERE id = route_id AND creator_id = (select auth.uid()))",
+          "withCheck": "EXISTS (SELECT 1 FROM pilgrimage_routes WHERE id = route_id AND creator_id = (select auth.uid()))"
+        },
+        "route_temples_delete_own": {
+          "name": "route_temples_delete_own",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "EXISTS (SELECT 1 FROM pilgrimage_routes WHERE id = route_id AND creator_id = (select auth.uid()))"
+        },
+        "route_temples_admin_all": {
+          "name": "route_temples_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.user_pilgrimages": {
-      "name": "user_pilgrimages",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "route_id": {
-          "name": "route_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "completed_at": {
-          "name": "completed_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "user_pilgrimages_user_id_users_id_fk": {
-          "name": "user_pilgrimages_user_id_users_id_fk",
-          "tableFrom": "user_pilgrimages",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "user_pilgrimages_route_id_pilgrimage_routes_id_fk": {
-          "name": "user_pilgrimages_route_id_pilgrimage_routes_id_fk",
-          "tableFrom": "user_pilgrimages",
-          "tableTo": "pilgrimage_routes",
-          "columnsFrom": ["route_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.bookmarks": {
-      "name": "bookmarks",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "temple_id": {
-          "name": "temple_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "bookmarks_user_id_users_id_fk": {
-          "name": "bookmarks_user_id_users_id_fk",
-          "tableFrom": "bookmarks",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "bookmarks_temple_id_temples_id_fk": {
-          "name": "bookmarks_temple_id_temples_id_fk",
-          "tableFrom": "bookmarks",
-          "tableTo": "temples",
-          "columnsFrom": ["temple_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.comments": {
-      "name": "comments",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_type": {
-          "name": "target_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_id": {
-          "name": "target_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "parent_comment_id": {
-          "name": "parent_comment_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "comments_user_id_users_id_fk": {
-          "name": "comments_user_id_users_id_fk",
-          "tableFrom": "comments",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.follows": {
-      "name": "follows",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "follower_id": {
-          "name": "follower_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_type": {
-          "name": "target_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_id": {
-          "name": "target_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "follows_follower_id_users_id_fk": {
-          "name": "follows_follower_id_users_id_fk",
-          "tableFrom": "follows",
-          "tableTo": "users",
-          "columnsFrom": ["follower_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.likes": {
-      "name": "likes",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_type": {
-          "name": "target_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_id": {
-          "name": "target_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "likes_user_id_users_id_fk": {
-          "name": "likes_user_id_users_id_fk",
-          "tableFrom": "likes",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.temple_news": {
-      "name": "temple_news",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "temple_id": {
-          "name": "temple_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "title": {
-          "name": "title",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "category_tag": {
-          "name": "category_tag",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "published_at": {
-          "name": "published_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "temple_news_temple_id_temples_id_fk": {
-          "name": "temple_news_temple_id_temples_id_fk",
-          "tableFrom": "temple_news",
-          "tableTo": "temples",
-          "columnsFrom": ["temple_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.visit_histories": {
-      "name": "visit_histories",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "temple_id": {
-          "name": "temple_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "content": {
-          "name": "content",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "visit_date": {
-          "name": "visit_date",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "is_goshuin": {
-          "name": "is_goshuin",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "visit_histories_user_id_users_id_fk": {
-          "name": "visit_histories_user_id_users_id_fk",
-          "tableFrom": "visit_histories",
-          "tableTo": "users",
-          "columnsFrom": ["user_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "visit_histories_temple_id_temples_id_fk": {
-          "name": "visit_histories_temple_id_temples_id_fk",
-          "tableFrom": "visit_histories",
-          "tableTo": "temples",
-          "columnsFrom": ["temple_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.visit_photos": {
-      "name": "visit_photos",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "serial",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "visit_history_id": {
-          "name": "visit_history_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "image_url": {
-          "name": "image_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "is_goshuin_image": {
-          "name": "is_goshuin_image",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "visit_photos_visit_history_id_visit_histories_id_fk": {
-          "name": "visit_photos_visit_history_id_visit_histories_id_fk",
-          "tableFrom": "visit_photos",
-          "tableTo": "visit_histories",
-          "columnsFrom": ["visit_history_id"],
-          "columnsTo": ["id"],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.temple_aliases": {
       "name": "temple_aliases",
@@ -901,9 +887,47 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "temple_aliases_select_public": {
+          "name": "temple_aliases_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "temple_aliases_insert_official": {
+          "name": "temple_aliases_insert_official",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "is_temple_official(temple_id)"
+        },
+        "temple_aliases_update_official": {
+          "name": "temple_aliases_update_official",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "is_temple_official(temple_id)",
+          "withCheck": "is_temple_official(temple_id)"
+        },
+        "temple_aliases_delete_official": {
+          "name": "temple_aliases_delete_official",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "is_temple_official(temple_id)"
+        },
+        "temple_aliases_admin_all": {
+          "name": "temple_aliases_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.temple_edit_requests": {
       "name": "temple_edit_requests",
@@ -977,9 +1001,54 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "temple_edit_requests_select_requester": {
+          "name": "temple_edit_requests_select_requester",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "requester_id = (select auth.uid())"
+        },
+        "temple_edit_requests_select_official": {
+          "name": "temple_edit_requests_select_official",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "is_temple_official(temple_id)"
+        },
+        "temple_edit_requests_insert_own": {
+          "name": "temple_edit_requests_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "requester_id = (select auth.uid())"
+        },
+        "temple_edit_requests_update_official": {
+          "name": "temple_edit_requests_update_official",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "is_temple_official(temple_id)",
+          "withCheck": "is_temple_official(temple_id)"
+        },
+        "temple_edit_requests_delete_own": {
+          "name": "temple_edit_requests_delete_own",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "requester_id = (select auth.uid())"
+        },
+        "temple_edit_requests_admin_all": {
+          "name": "temple_edit_requests_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.temple_facilities": {
       "name": "temple_facilities",
@@ -1084,9 +1153,151 @@
           "columns": ["temple_id"]
         }
       },
-      "policies": {},
+      "policies": {
+        "temple_facilities_select_public": {
+          "name": "temple_facilities_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "temple_facilities_insert_official": {
+          "name": "temple_facilities_insert_official",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "is_temple_official(temple_id)"
+        },
+        "temple_facilities_update_official": {
+          "name": "temple_facilities_update_official",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "is_temple_official(temple_id)",
+          "withCheck": "is_temple_official(temple_id)"
+        },
+        "temple_facilities_delete_official": {
+          "name": "temple_facilities_delete_official",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "is_temple_official(temple_id)"
+        },
+        "temple_facilities_admin_all": {
+          "name": "temple_facilities_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
+    },
+    "public.temple_news": {
+      "name": "temple_news",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "temple_id": {
+          "name": "temple_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "category_tag": {
+          "name": "category_tag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "temple_news_temple_id_temples_id_fk": {
+          "name": "temple_news_temple_id_temples_id_fk",
+          "tableFrom": "temple_news",
+          "tableTo": "temples",
+          "columnsFrom": ["temple_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "temple_news_select_public": {
+          "name": "temple_news_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "temple_news_insert_official": {
+          "name": "temple_news_insert_official",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "is_temple_official(temple_id)"
+        },
+        "temple_news_update_official": {
+          "name": "temple_news_update_official",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "is_temple_official(temple_id)",
+          "withCheck": "is_temple_official(temple_id)"
+        },
+        "temple_news_delete_official": {
+          "name": "temple_news_delete_official",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "is_temple_official(temple_id)"
+        },
+        "temple_news_admin_all": {
+          "name": "temple_news_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
     },
     "public.temple_officials": {
       "name": "temple_officials",
@@ -1165,9 +1376,40 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "temple_officials_select_own": {
+          "name": "temple_officials_select_own",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid())"
+        },
+        "temple_officials_insert_own": {
+          "name": "temple_officials_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "user_id = (select auth.uid())"
+        },
+        "temple_officials_update_pending": {
+          "name": "temple_officials_update_pending",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid()) AND status = '申請中'",
+          "withCheck": "user_id = (select auth.uid()) AND status = '申請中'"
+        },
+        "temple_officials_admin_all": {
+          "name": "temple_officials_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
     },
     "public.temples": {
       "name": "temples",
@@ -1283,9 +1525,206 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
+      "policies": {
+        "temples_select_public": {
+          "name": "temples_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "temples_update_official": {
+          "name": "temples_update_official",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "is_temple_official(id)",
+          "withCheck": "is_temple_official(id)"
+        },
+        "temples_admin_all": {
+          "name": "temples_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
+    },
+    "public.user_badges": {
+      "name": "user_badges",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "badge_id": {
+          "name": "badge_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "awarded_at": {
+          "name": "awarded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_badges_user_id_users_id_fk": {
+          "name": "user_badges_user_id_users_id_fk",
+          "tableFrom": "user_badges",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_badges_badge_id_badges_id_fk": {
+          "name": "user_badges_badge_id_badges_id_fk",
+          "tableFrom": "user_badges",
+          "tableTo": "badges",
+          "columnsFrom": ["badge_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "user_badges_select_public": {
+          "name": "user_badges_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "user_badges_admin_all": {
+          "name": "user_badges_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.user_pilgrimages": {
+      "name": "user_pilgrimages",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "route_id": {
+          "name": "route_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_pilgrimages_user_id_users_id_fk": {
+          "name": "user_pilgrimages_user_id_users_id_fk",
+          "tableFrom": "user_pilgrimages",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "user_pilgrimages_route_id_pilgrimage_routes_id_fk": {
+          "name": "user_pilgrimages_route_id_pilgrimage_routes_id_fk",
+          "tableFrom": "user_pilgrimages",
+          "tableTo": "pilgrimage_routes",
+          "columnsFrom": ["route_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "user_pilgrimages_select_public": {
+          "name": "user_pilgrimages_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "user_pilgrimages_insert_own": {
+          "name": "user_pilgrimages_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "user_id = (select auth.uid())"
+        },
+        "user_pilgrimages_update_own": {
+          "name": "user_pilgrimages_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid())",
+          "withCheck": "user_id = (select auth.uid())"
+        },
+        "user_pilgrimages_delete_own": {
+          "name": "user_pilgrimages_delete_own",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid())"
+        },
+        "user_pilgrimages_admin_all": {
+          "name": "user_pilgrimages_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
     },
     "public.users": {
       "name": "users",
@@ -1393,9 +1832,240 @@
           "columns": ["display_id"]
         }
       },
-      "policies": {},
+      "policies": {
+        "users_select_public": {
+          "name": "users_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "users_insert_self": {
+          "name": "users_insert_self",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "id = (select auth.uid())"
+        },
+        "users_update_self": {
+          "name": "users_update_self",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "id = (select auth.uid())",
+          "withCheck": "id = (select auth.uid())"
+        },
+        "users_admin_all": {
+          "name": "users_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
       "checkConstraints": {},
-      "isRLSEnabled": false
+      "isRLSEnabled": true
+    },
+    "public.visit_histories": {
+      "name": "visit_histories",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "temple_id": {
+          "name": "temple_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "content": {
+          "name": "content",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "visit_date": {
+          "name": "visit_date",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_goshuin": {
+          "name": "is_goshuin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "visit_histories_user_id_users_id_fk": {
+          "name": "visit_histories_user_id_users_id_fk",
+          "tableFrom": "visit_histories",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "visit_histories_temple_id_temples_id_fk": {
+          "name": "visit_histories_temple_id_temples_id_fk",
+          "tableFrom": "visit_histories",
+          "tableTo": "temples",
+          "columnsFrom": ["temple_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "visit_histories_select_public": {
+          "name": "visit_histories_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "visit_histories_insert_own": {
+          "name": "visit_histories_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "user_id = (select auth.uid())"
+        },
+        "visit_histories_update_own": {
+          "name": "visit_histories_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid())",
+          "withCheck": "user_id = (select auth.uid())"
+        },
+        "visit_histories_delete_own": {
+          "name": "visit_histories_delete_own",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "user_id = (select auth.uid())"
+        },
+        "visit_histories_admin_all": {
+          "name": "visit_histories_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
+    },
+    "public.visit_photos": {
+      "name": "visit_photos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "visit_history_id": {
+          "name": "visit_history_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_goshuin_image": {
+          "name": "is_goshuin_image",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "visit_photos_visit_history_id_visit_histories_id_fk": {
+          "name": "visit_photos_visit_history_id_visit_histories_id_fk",
+          "tableFrom": "visit_photos",
+          "tableTo": "visit_histories",
+          "columnsFrom": ["visit_history_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "visit_photos_select_public": {
+          "name": "visit_photos_select_public",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": ["public"],
+          "using": "true"
+        },
+        "visit_photos_insert_own": {
+          "name": "visit_photos_insert_own",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": ["authenticated"],
+          "withCheck": "EXISTS (SELECT 1 FROM visit_histories WHERE id = visit_history_id AND user_id = (select auth.uid()))"
+        },
+        "visit_photos_update_own": {
+          "name": "visit_photos_update_own",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": ["authenticated"],
+          "using": "EXISTS (SELECT 1 FROM visit_histories WHERE id = visit_history_id AND user_id = (select auth.uid()))",
+          "withCheck": "EXISTS (SELECT 1 FROM visit_histories WHERE id = visit_history_id AND user_id = (select auth.uid()))"
+        },
+        "visit_photos_delete_own": {
+          "name": "visit_photos_delete_own",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": ["authenticated"],
+          "using": "EXISTS (SELECT 1 FROM visit_histories WHERE id = visit_history_id AND user_id = (select auth.uid()))"
+        },
+        "visit_photos_admin_all": {
+          "name": "visit_photos_admin_all",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": ["authenticated"],
+          "using": "is_admin()",
+          "withCheck": "is_admin()"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": true
     }
   },
   "enums": {},

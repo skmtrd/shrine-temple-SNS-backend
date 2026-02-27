@@ -1,6 +1,12 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { db } from "../db";
+import { users } from "../db/schema";
 import { createAnonClient, createAuthenticatedClient } from "../lib/supabase";
-import { AuthRequestSchema, AuthResponseSchema } from "../schemas/auth";
+import {
+  AuthRequestSchema,
+  AuthResponseSchema,
+  LoginRequestSchema,
+} from "../schemas/auth";
 import { ErrorSchema } from "../schemas/common";
 import type { Variables } from "../types";
 
@@ -33,7 +39,7 @@ const signupRoute = createRoute({
 });
 
 app.openapi(signupRoute, async (c) => {
-  const { email, password } = c.req.valid("json");
+  const { email, password, displayId, username } = c.req.valid("json");
   const supabase = createAnonClient();
   const { data, error } = await supabase.auth.signUp({ email, password });
 
@@ -41,12 +47,29 @@ app.openapi(signupRoute, async (c) => {
     return c.json({ error: error.message }, 400);
   }
 
+  if (!data.user) {
+    return c.json({ error: "ユーザー作成に失敗しました" }, 400);
+  }
+
+  try {
+    await db.insert(users).values({
+      id: data.user.id,
+      email,
+      displayId,
+      username,
+    });
+  } catch (dbError: unknown) {
+    const message =
+      dbError instanceof Error
+        ? dbError.message
+        : "ユーザー情報の登録に失敗しました";
+    return c.json({ error: message }, 400);
+  }
+
   return c.json(
     {
       message: "Account created successfully",
-      user: data.user
-        ? { id: data.user.id, email: data.user.email ?? null }
-        : null,
+      user: { id: data.user.id, email: data.user.email ?? null },
       session: data.session
         ? {
             access_token: data.session.access_token,
@@ -65,7 +88,7 @@ const loginRoute = createRoute({
   tags: ["Auth"],
   summary: "ログイン",
   request: {
-    body: { content: { "application/json": { schema: AuthRequestSchema } } },
+    body: { content: { "application/json": { schema: LoginRequestSchema } } },
   },
   responses: {
     200: {
