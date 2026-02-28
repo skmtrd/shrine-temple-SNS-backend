@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   integer,
+  pgEnum,
   pgPolicy,
   pgTable,
   serial,
@@ -12,6 +13,12 @@ import { authenticatedRole } from "drizzle-orm/supabase";
 import { temples } from "./temples";
 import { users } from "./users";
 
+export const officialRequestStatusEnum = pgEnum("official_request_status", [
+  "pending",
+  "rejected",
+  "approved",
+]);
+
 export const templeOfficials = pgTable(
   "temple_officials",
   {
@@ -22,8 +29,9 @@ export const templeOfficials = pgTable(
     templeId: integer("temple_id")
       .notNull()
       .references(() => temples.id),
-    status: text("status").notNull().default("申請中"),
+    status: officialRequestStatusEnum("status").notNull().default("pending"),
     applicantName: text("applicant_name").notNull(),
+    email: text("email").notNull(),
     contactInfo: text("contact_info").notNull(),
     registryImageUrl: text("registry_image_url").notNull(),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
@@ -42,8 +50,8 @@ export const templeOfficials = pgTable(
     pgPolicy("temple_officials_update_pending", {
       for: "update",
       to: authenticatedRole,
-      using: sql`user_id = (select auth.uid()) AND status = '申請中'`,
-      withCheck: sql`user_id = (select auth.uid()) AND status = '申請中'`,
+      using: sql`user_id = (select auth.uid()) AND status = 'pending'`,
+      withCheck: sql`user_id = (select auth.uid()) AND status = 'pending'`,
     }),
     pgPolicy("temple_officials_admin_all", {
       for: "all",
