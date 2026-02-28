@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   integer,
+  pgEnum,
   pgPolicy,
   pgTable,
   text,
@@ -19,11 +20,13 @@ import { userBadges } from "./user-badges";
 import { userPilgrimages } from "./user-pilgrimages";
 import { visitHistories } from "./visit-histories";
 
+export const userRoleEnum = pgEnum("user_role", ["user", "official", "admin"]);
+
 export const users = pgTable(
   "users",
   {
     id: uuid("id").primaryKey(),
-    role: text("role").notNull().default("一般"),
+    role: userRoleEnum("role").notNull().default("user"),
     email: text("email").notNull().unique(),
     displayId: text("display_id").notNull().unique(),
     username: text("username").notNull(),

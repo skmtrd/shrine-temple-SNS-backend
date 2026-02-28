@@ -8,6 +8,13 @@
       "when": 1772198285862,
       "tag": "0000_yielding_vampiro",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772267707091,
+      "tag": "0001_nasty_grey_gargoyle",
+      "breakpoints": true
     }
   ]
 }

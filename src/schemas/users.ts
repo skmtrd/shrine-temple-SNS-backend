@@ -6,7 +6,7 @@ export const MeResponseSchema = z
     email: z.string(),
     displayId: z.string(),
     username: z.string(),
-    role: z.string(),
+    role: z.enum(["user", "official", "admin"]),
     profileImage: z.string().nullable(),
     bio: z.string().nullable(),
     createdAt: z.string(),
